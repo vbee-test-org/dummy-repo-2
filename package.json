@@ -1,0 +1,26 @@
+{
+  "name": "dora-tracker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx tsc && npx resolve-tspaths",
+    "start": "node dist/index.js",
+    "dev": "npx nodemon -q",
+    "test": "node --import tsx -r tsconfig-paths/register --test test/**/*.test.ts"
+  },
+  "author": "Zeann3th",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "mongoose": "^8.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "nodemon": "^3.1.7",
+    "resolve-tspaths": "^0.8.22",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
