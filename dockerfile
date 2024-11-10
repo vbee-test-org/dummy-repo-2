@@ -16,11 +16,13 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/bin ./bin
 COPY package*.json ./
 
 RUN npm install --only=production
 
-EXPOSE 7554
+EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+ENV NODE_ENV production
+
+CMD ["node", "bin/index.js"]

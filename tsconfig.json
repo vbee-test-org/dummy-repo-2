@@ -11,7 +11,8 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "outDir": "./dist"
+    "outDir": "./bin"
   },
-  "exclude": ["node_modules", "dist", "test"]
+  "include": ["src/**/*.ts", "environment.d.ts"], 
+  "exclude": ["node_modules", "bin", "test", "sample"]
 }
