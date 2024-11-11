@@ -6,6 +6,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import mongoose from "mongoose";
 import { deploymentRoutes } from "./routes/deployment.routes";
+import path from "path";
 
 const app = express();
 const port = env.PORT || 5000;
@@ -14,11 +15,13 @@ const port = env.PORT || 5000;
 app.use(express.json());
 
 // Security
-app.use(cors<Request>());
-app.use(helmet());
+app.use(cors<Request>({ origin: "*" }));
+//app.use(helmet());
 
 // Logging
 app.use(morgan(":method :url :status - :response-time ms"));
+
+app.use("/public", express.static(path.join(__dirname, "../public")));
 
 // Ignore favicon.ico
 app.get("/favicon.ico", (req, res) => {
@@ -27,6 +30,10 @@ app.get("/favicon.ico", (req, res) => {
 
 // Routes
 app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/index.html"));
+});
+
+app.get("/health", (req, res) => {
   res.status(200).json({
     msg: "Server is healthy",
     last_checked: new Date().toISOString(),

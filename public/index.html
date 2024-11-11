@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>GitHub Link Form</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+
+    .form-container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      margin-right: 1rem;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      width: 300px;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="form-container">
+    <h2>Enter GitHub Link</h2>
+    <form id="github-form">
+      <div class="form-group">
+        <label for="github-link">GitHub Link:</label>
+        <input type="text" id="github-link" name="github-link" placeholder="https://github.com/username/repo" required>
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('github-form');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const githubLink = document.getElementById('github-link').value;
+
+      try {
+
+        const parts = githubLink.split("/")
+        const owner = parts[parts.length - 2]
+        const repo = parts[parts.length - 1]
+
+        const response = await axios.get(`http://127.0.0.1:5000/repos/${owner}/${repo}`);
+        console.log(response.data);
+      } catch (error) {
+        alert('Error submitting form: ' + error.message);
+      }
+    });
+  </script>
+</body>
+
+</html>
