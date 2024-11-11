@@ -1,9 +1,11 @@
 import "dotenv/config";
+import env from "@/env";
 import express, { Request } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import morgan from "morgan";
 import mongoose from "mongoose";
-import env from "@/env";
+import { deploymentRoutes } from "./routes/deployment.routes";
 
 const app = express();
 const port = env.PORT || 5000;
@@ -16,18 +18,22 @@ app.use(cors<Request>());
 app.use(helmet());
 
 // Logging
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
+app.use(morgan(":method :url :status - :response-time ms"));
+
+// Ignore favicon.ico
+app.get("/favicon.ico", (req, res) => {
+  res.status(204).send();
 });
 
-// End-points
+// Routes
 app.get("/", (req, res) => {
   res.status(200).json({
     msg: "Server is healthy",
     last_checked: new Date().toISOString(),
   });
 });
+
+app.use("/repos", deploymentRoutes);
 
 // Server start
 mongoose
