@@ -1,6 +1,6 @@
 import { InferSchemaType, model, Schema } from "mongoose";
 
-const commitSchema = new Schema({
+const branchSchema = new Schema({
   _id: {
     type: String,
     unique: true,
@@ -10,15 +10,12 @@ const commitSchema = new Schema({
     ref: "Repository",
     required: true,
   },
-  branch_id: {
+  name: {
     type: String,
-    ref: "Branch",
     required: true,
   },
-  commit_message: String,
-  author: String,
 });
 
-type Commit = InferSchemaType<typeof commitSchema>;
+type Branch = InferSchemaType<typeof branchSchema>;
 
-export default model<Commit>("Commit", commitSchema);
+export default model<Branch>("Branch", branchSchema);

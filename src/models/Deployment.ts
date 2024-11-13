@@ -1,17 +1,24 @@
 import { InferSchemaType, model, Schema } from "mongoose";
 
 const deploymentSchema = new Schema({
-  branch: {
-    type: String,
+  _id: {
+    type: Number,
     required: true,
   },
-  name: {
+  commit_id: {
+    type: String,
+    ref: "Commit",
+    required: true,
+  },
+  branch_id: {
+    type: String,
+    ref: "Branch",
+    required: true,
+  },
+  service_name: {
     type: String,
   },
   status: {
-    type: String,
-  },
-  conclusion: {
     type: String,
   },
   started_at: {
