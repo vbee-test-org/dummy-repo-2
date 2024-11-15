@@ -1,5 +1,5 @@
-import { getJobStatus, queueJob } from "@/controllers/job.controller";
 import { Request, Response, Router } from "express";
+import { getJobStatus, queueJob } from "../controllers/job.controller";
 
 const router = Router();
 

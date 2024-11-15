@@ -1,14 +1,38 @@
+import "dotenv/config";
 import env from "@/env";
-import { Queue } from "bullmq";
+import { Job, Worker } from "bullmq";
+import mongoose from "mongoose";
+import task from "./task";
+import { connectDB } from "@/services/mongoose";
 
-const queue = new Queue("runtimeQueue", {
-  connection: {
-    url: env.REDIS_URL,
-  },
-});
+export const startWorker = async () => {
+  return new Promise<void>(async (resolve, reject) => {
+    try {
+      await connectDB("worker");
 
-queue.on("waiting", (job) => {
-  console.log(`Job ${job.id} is added to queue`);
-});
+      const worker = new Worker("runtimeQueue", task.processRepo, {
+        connection: { url: env.REDIS_URL },
+        removeOnFail: { count: 0 },
+        removeOnComplete: { age: 300, count: 10 },
+      });
 
-export default queue;
+      worker.on("active", (job) => {
+        console.log(`[Worker]: Job ${job.id} is now active!`);
+      });
+
+      worker.on("completed", (job) => {
+        console.log(`[Worker]: Job ${job.id} has completed!`);
+      });
+
+      worker.on("failed", (job, err) => {
+        console.log(`[Worker]: Job ${job?.id} has failed with ${err.message}`);
+      });
+
+      console.log("✅[Worker]: Background worker is ready");
+      resolve();
+    } catch (error) {
+      console.error("Failed to start worker:", error);
+      reject(error);
+    }
+  });
+};

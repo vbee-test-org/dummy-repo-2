@@ -11,11 +11,6 @@ const schema = z.object({
   MONGO_DB_NAME: z.string({ required_error: "MONGO_DB_NAME is required" }),
   GH_PAT: z.string({ required_error: "GH_PAT is required" }).startsWith("ghp_"),
   REDIS_URL: z.string({ required_error: "REDIS_URL is required" }),
-  REDIS_TOKEN: z.string({ required_error: "REDIS_TOKEN is required" }),
-  REDIS_PORT: z.coerce
-    .number({ required_error: "REDIS_PORT is required" })
-    .min(1024, "REDIS_PORT must be >= 1024")
-    .max(65535, "REDIS_PORT must be <= 65535"),
 });
 
 export type Env = z.infer<typeof schema>;

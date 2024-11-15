@@ -6,7 +6,6 @@
     "build": "npx tsc && npx resolve-tspaths",
     "start": "node bin/index.js",
     "dev": "npx nodemon -q",
-    "dev:worker": "tsx --no-warnings -r tsconfig-paths/register src/worker/worker.ts",
     "test": "node --import tsx -r tsconfig-paths/register --test test/**/*.test.ts"
   },
   "author": "Zeann3th",

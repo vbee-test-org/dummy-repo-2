@@ -1,4 +1,4 @@
-import queue from "@/worker";
+import queue from "@/worker/queue";
 import { Job } from "bullmq";
 import { randomUUID } from "crypto";
 import { Request, RequestHandler, Response } from "express";
@@ -10,9 +10,9 @@ const queueJob: RequestHandler = async (req: Request, res: Response) => {
     res.status(400).json({ error: "Link is required" });
   }
 
-  await queue.add("repo", { link });
+  const job = await queue.add("repo", { link });
 
-  res.status(202).json({ message: "Task is being processed" });
+  res.status(202).json({ message: "Task is being processed", jobId: job.id });
 };
 
 const getJobStatus: RequestHandler = async (req: Request, res: Response) => {
