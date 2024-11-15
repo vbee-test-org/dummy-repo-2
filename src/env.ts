@@ -7,9 +7,10 @@ const schema = z.object({
     .max(65535, "PORT must be <= 65535"),
   MONGO_URI: z
     .string({ required_error: "MONGO_URI is required" })
-    .url("Exprected MONGO_URI to be url"),
+    .url("Expected MONGO_URI to be url"),
   MONGO_DB_NAME: z.string({ required_error: "MONGO_DB_NAME is required" }),
   GH_PAT: z.string({ required_error: "GH_PAT is required" }).startsWith("ghp_"),
+  REDIS_URL: z.string({ required_error: "REDIS_URL is required" }),
 });
 
 export type Env = z.infer<typeof schema>;

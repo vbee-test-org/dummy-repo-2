@@ -1,10 +1,6 @@
 import { InferSchemaType, model, Schema } from "mongoose";
 
 const branchSchema = new Schema({
-  _id: {
-    type: String,
-    unique: true,
-  },
   repo_id: {
     type: String,
     ref: "Repository",
