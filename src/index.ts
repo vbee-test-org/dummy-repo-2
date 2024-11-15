@@ -7,6 +7,7 @@ import morgan from "morgan";
 import mongoose from "mongoose";
 import { deploymentRoutes } from "./routes/deployment.routes";
 import path from "path";
+import { jobRoutes } from "./routes/job.routes";
 
 const app = express();
 const port = env.PORT || 5000;
@@ -16,17 +17,12 @@ app.use(express.json());
 
 // Security
 app.use(cors<Request>({ origin: "*" }));
-//app.use(helmet());
+app.use(helmet());
 
 // Logging
 app.use(morgan(":method :url :status - :response-time ms"));
 
 app.use("/public", express.static(path.join(__dirname, "../public")));
-
-// Ignore favicon.ico
-app.get("/favicon.ico", (req, res) => {
-  res.status(204).send();
-});
 
 // Routes
 app.get("/", (req, res) => {
@@ -41,6 +37,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/repos", deploymentRoutes);
+app.use("/job", jobRoutes);
 
 // Server start
 mongoose

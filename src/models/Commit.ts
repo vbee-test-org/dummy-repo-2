@@ -1,4 +1,4 @@
-import { InferSchemaType, model, Schema } from "mongoose";
+import mongoose, { InferSchemaType, model, Schema } from "mongoose";
 
 const commitSchema = new Schema({
   _id: {
@@ -6,12 +6,12 @@ const commitSchema = new Schema({
     unique: true,
   },
   repo_id: {
-    type: String,
+    type: Number,
     ref: "Repository",
     required: true,
   },
   branch_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Branch",
     required: true,
   },

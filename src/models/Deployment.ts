@@ -1,4 +1,4 @@
-import { InferSchemaType, model, Schema } from "mongoose";
+import mongoose, { InferSchemaType, model, Schema } from "mongoose";
 
 const deploymentSchema = new Schema({
   _id: {
@@ -11,8 +11,7 @@ const deploymentSchema = new Schema({
     required: true,
   },
   branch_id: {
-    type: String,
-    ref: "Branch",
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
   service_name: {
