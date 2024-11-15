@@ -10,7 +10,6 @@ const processRepo = async (job: Job) => {
   // Extract owner and repository name from link
   // e.g: https://github.com/mui/material-ui => owner: mui, repo: material-ui
   const [owner, repo] = extractUserInput(link);
-  console.log(owner, repo);
 
   // Checks for repository on database, if doesn't exist, create a new repository document
   let repository = await Repository.findOne({
@@ -45,6 +44,7 @@ const processRepo = async (job: Job) => {
       return branch;
     }),
   );
+  await job.updateProgress(50);
 
   // Adding commits
   for (const branchDoc of branchDocs) {
@@ -76,6 +76,7 @@ const processRepo = async (job: Job) => {
       }),
     );
   }
+  await job.updateProgress(100);
 };
 
 const extractUserInput = (link: string): [string, string] => {

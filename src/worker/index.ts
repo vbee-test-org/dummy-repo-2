@@ -5,14 +5,14 @@ import mongoose from "mongoose";
 import task from "./task";
 import { connectDB } from "@/services/mongoose";
 
-export const startWorker = async () => {
-  return new Promise<void>(async (resolve, reject) => {
+export const startWorker = async (): Promise<Worker> => {
+  return new Promise<Worker>(async (resolve, reject) => {
     try {
       await connectDB("worker");
 
       const worker = new Worker("runtimeQueue", task.processRepo, {
         connection: { url: env.REDIS_URL },
-        removeOnFail: { count: 0 },
+        removeOnFail: { count: 10 },
         removeOnComplete: { age: 300, count: 10 },
       });
 
@@ -29,9 +29,8 @@ export const startWorker = async () => {
       });
 
       console.log("✅[Worker]: Background worker is ready");
-      resolve();
+      resolve(worker);
     } catch (error) {
-      console.error("Failed to start worker:", error);
       reject(error);
     }
   });

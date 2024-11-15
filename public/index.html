@@ -76,12 +76,9 @@
 
       try {
 
-        const parts = githubLink.split("/")
-        const owner = parts[parts.length - 2]
-        const repo = parts[parts.length - 1]
-
-        const response = await axios.get(`http://127.0.0.1:5000/repos/${owner}/${repo}`);
-        console.log(response.data);
+        const response = await axios.post(`http://127.0.0.1:5000/job`, {
+          link: githubLink
+        }).then((response) => {console.log(response)});
       } catch (error) {
         alert('Error submitting form: ' + error.message);
       }
