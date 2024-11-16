@@ -19,6 +19,6 @@ const commitSchema = new Schema({
   author: String,
 });
 
-type Commit = InferSchemaType<typeof commitSchema>;
+export type Commit = InferSchemaType<typeof commitSchema>;
 
-export default model<Commit>("Commit", commitSchema);
+export const CommitModel = model<Commit>("Commit", commitSchema);

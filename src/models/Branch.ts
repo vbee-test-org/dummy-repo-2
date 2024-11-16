@@ -1,4 +1,4 @@
-import { InferSchemaType, model, Schema } from "mongoose";
+import mongoose, { InferSchemaType, model, Schema } from "mongoose";
 
 const branchSchema = new Schema({
   repo_id: {
@@ -12,6 +12,8 @@ const branchSchema = new Schema({
   },
 });
 
-type Branch = InferSchemaType<typeof branchSchema>;
+export type Branch = InferSchemaType<typeof branchSchema> & {
+  _id: mongoose.Schema.Types.ObjectId;
+};
 
-export default model<Branch>("Branch", branchSchema);
+export const BranchModel = model<Branch>("Branch", branchSchema);

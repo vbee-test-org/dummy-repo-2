@@ -38,6 +38,9 @@ const deploymentSchema = new Schema({
   },
 });
 
-type Deployment = InferSchemaType<typeof deploymentSchema>;
+export type Deployment = InferSchemaType<typeof deploymentSchema>;
 
-export default model<Deployment>("Deployment", deploymentSchema);
+export const DeploymentModel = model<Deployment>(
+  "Deployment",
+  deploymentSchema,
+);

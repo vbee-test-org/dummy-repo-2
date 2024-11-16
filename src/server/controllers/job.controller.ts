@@ -1,4 +1,4 @@
-import queue from "@/worker/queue";
+import queue from "@/services/queue";
 import { Job } from "bullmq";
 import { randomUUID } from "crypto";
 import { Request, RequestHandler, Response } from "express";
