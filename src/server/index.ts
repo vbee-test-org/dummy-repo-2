@@ -25,10 +25,13 @@ export const startServer = async (): Promise<Server> => {
   // Logging
   app.use(morgan(":method :url :status - :response-time ms"));
 
+  // Rate limiting
+  app.use(limiter);
+
   app.use("/public", express.static(path.join(__dirname, "../../public")));
 
   // Routes
-  app.get("/", limiter, (req, res) => {
+  app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../../public/index.html"));
   });
 
