@@ -1,4 +1,4 @@
-export { Repository, RepositoryModel } from "./Repository";
-export { Branch, BranchModel } from "./Branch";
-export { Commit, CommitModel } from "./Commit";
-export { Deployment, DeploymentModel } from "./Deployment";
+export { type Repository, RepositoryModel } from "./Repository";
+export { type Branch, BranchModel } from "./Branch";
+export { type Commit, CommitModel } from "./Commit";
+export { type Deployment, DeploymentModel } from "./Deployment";
