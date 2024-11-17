@@ -50,4 +50,4 @@ const getJobStatus: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
-export { queueJob, getJobStatus };
+export default { queueJob, getJobStatus };

@@ -6,8 +6,8 @@ import morgan from "morgan";
 import path from "path";
 import { limiter } from "./middlewares/ratelimit";
 import { connectDB } from "@/services/mongoose";
-import { deploymentRoutes, jobRoutes } from "./routes";
 import { Server } from "http";
+import { jobRoutes, repositoryRoutes } from "./routes";
 
 export const startServer = async (): Promise<Server> => {
   await connectDB("server");
@@ -39,8 +39,8 @@ export const startServer = async (): Promise<Server> => {
     });
   });
 
-  app.use("/repos", deploymentRoutes);
-  app.use("/job", jobRoutes);
+  app.use("/v1/repos", repositoryRoutes);
+  app.use("/v1/jobs", jobRoutes);
 
   return new Promise<Server>((resolve) => {
     const server = app.listen(port, () => {

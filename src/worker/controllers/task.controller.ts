@@ -95,6 +95,14 @@ const createCommits = async (
           commit_message: message,
           author: author?.name,
         });
+
+        if (branch.name === "dev") {
+          //TODO: Implement dev branch logic
+        } else if (branch.name === "uat") {
+          //TODO: Implement uat branch logic
+        } else if (branch.name === "prod") {
+          //TODO: Implement prod branch logic
+        }
       }
       return commit;
     }),
