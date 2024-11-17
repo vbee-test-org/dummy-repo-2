@@ -1,4 +1,4 @@
-import queue from "@/worker/queue";
+import queue from "@/services/queue";
 import { Job } from "bullmq";
 import { randomUUID } from "crypto";
 import { Request, RequestHandler, Response } from "express";
@@ -50,4 +50,4 @@ const getJobStatus: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
-export { queueJob, getJobStatus };
+export default { queueJob, getJobStatus };

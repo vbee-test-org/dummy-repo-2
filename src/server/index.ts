@@ -6,8 +6,8 @@ import morgan from "morgan";
 import path from "path";
 import { limiter } from "./middlewares/ratelimit";
 import { connectDB } from "@/services/mongoose";
-import { deploymentRoutes, jobRoutes } from "./routes";
 import { Server } from "http";
+import { jobRoutes, repositoryRoutes } from "./routes";
 
 export const startServer = async (): Promise<Server> => {
   await connectDB("server");
@@ -25,10 +25,13 @@ export const startServer = async (): Promise<Server> => {
   // Logging
   app.use(morgan(":method :url :status - :response-time ms"));
 
+  // Rate limiting
+  app.use(limiter);
+
   app.use("/public", express.static(path.join(__dirname, "../../public")));
 
   // Routes
-  app.get("/", limiter, (req, res) => {
+  app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../../public/index.html"));
   });
 
@@ -39,8 +42,8 @@ export const startServer = async (): Promise<Server> => {
     });
   });
 
-  app.use("/repos", deploymentRoutes);
-  app.use("/job", jobRoutes);
+  app.use("/v1/repos", repositoryRoutes);
+  app.use("/v1/jobs", jobRoutes);
 
   return new Promise<Server>((resolve) => {
     const server = app.listen(port, () => {

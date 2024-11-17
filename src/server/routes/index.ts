@@ -1,2 +1,2 @@
-export { deploymentRoutes } from "./deployment.routes";
+export { repositoryRoutes } from "./repository.routes";
 export { jobRoutes } from "./job.routes";

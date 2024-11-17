@@ -1,10 +1,10 @@
 import { Request, Response, Router } from "express";
-import { getJobStatus, queueJob } from "../controllers/job.controller";
+import { JobController } from "../controllers";
 
 const router = Router();
 
-router.get("/:id", getJobStatus);
+router.get("/:id", JobController.getJobStatus);
 
-router.post("/", queueJob);
+router.post("/", JobController.queueJob);
 
 export { router as jobRoutes };

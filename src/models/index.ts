@@ -1,4 +1,4 @@
-export { default as Repository } from "./Repository";
-export { default as Branch } from "./Branch";
-export { default as Commit } from "./Commit";
-export { default as Deployment } from "./Deployment";
+export { Repository, RepositoryModel } from "./Repository";
+export { Branch, BranchModel } from "./Branch";
+export { Commit, CommitModel } from "./Commit";
+export { Deployment, DeploymentModel } from "./Deployment";

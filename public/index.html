@@ -59,7 +59,7 @@
 <body>
   <div class="form-container">
     <h2>Enter GitHub Link</h2>
-    <form id="github-form">
+    <form id="github-form" method="post">
       <div class="form-group">
         <label for="github-link">GitHub Link:</label>
         <input type="text" id="github-link" name="github-link" placeholder="https://github.com/username/repo" required>
@@ -75,10 +75,10 @@
       const githubLink = document.getElementById('github-link').value;
 
       try {
-
-        const response = await axios.post(`http://127.0.0.1:5000/job`, {
+        const response = await axios.post('http://127.0.0.1:5000/job', {
           link: githubLink
-        }).then((response) => {console.log(response)});
+        });
+        console.log(response);
       } catch (error) {
         alert('Error submitting form: ' + error.message);
       }
