@@ -42,7 +42,7 @@ const createBranches = async (
       await octokit.repos.getBranch({ owner, repo, branch: branchName });
       existingBranches.push(branchName);
     } catch (error) {
-      console.error(`Error checking branch ${branchName}:`, error);
+      console.error(`Error checking branch ${branchName}`);
     }
   }
 
