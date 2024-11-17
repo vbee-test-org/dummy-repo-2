@@ -2,6 +2,7 @@
   "name": "dora-tracker",
   "version": "1.0.0",
   "main": "./bin/index.js",
+  "type": "module",
   "scripts": {
     "build": "npx tsc && npx resolve-tspaths",
     "start": "node bin/index.js",

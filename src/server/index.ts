@@ -3,11 +3,12 @@ import express, { Express, Request } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import path from "path";
+import path, { dirname } from "path";
 import { limiter } from "./middlewares/ratelimit";
 import { connectDB } from "@/services/mongoose";
 import { Server } from "http";
 import { jobRoutes, repositoryRoutes } from "./routes";
+import { fileURLToPath } from "url";
 
 export const startServer = async (): Promise<Server> => {
   await connectDB("server");
@@ -27,6 +28,8 @@ export const startServer = async (): Promise<Server> => {
 
   // Rate limiting
   app.use(limiter);
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
 
   app.use("/public", express.static(path.join(__dirname, "../../public")));
 
