@@ -1,11 +1,11 @@
-import { InferSchemaType, model, Schema } from "mongoose";
+import mongoose, { InferSchemaType, model, Schema } from "mongoose";
 
 const repositorySchema = new Schema({
-  _id: {
-    type: Number,
-    unique: true,
+  owner: {
+    type: String,
+    required: true,
   },
-  full_name: {
+  name: {
     type: String,
     required: true,
   },
@@ -14,7 +14,9 @@ const repositorySchema = new Schema({
   },
 });
 
-export type Repository = InferSchemaType<typeof repositorySchema>;
+export type Repository = InferSchemaType<typeof repositorySchema> & {
+  _id: mongoose.Schema.Types.ObjectId;
+};
 
 export const RepositoryModel = model<Repository>(
   "Repository",

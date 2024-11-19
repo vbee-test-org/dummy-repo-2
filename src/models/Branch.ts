@@ -2,7 +2,7 @@ import mongoose, { InferSchemaType, model, Schema } from "mongoose";
 
 const branchSchema = new Schema({
   repo_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Repository",
     required: true,
   },

@@ -1,12 +1,12 @@
 import mongoose, { InferSchemaType, model, Schema } from "mongoose";
 
 const commitSchema = new Schema({
-  _id: {
+  sha: {
     type: String,
-    unique: true,
+    required: true,
   },
   repo_id: {
-    type: Number,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Repository",
     required: true,
   },
@@ -19,6 +19,8 @@ const commitSchema = new Schema({
   author: String,
 });
 
-export type Commit = InferSchemaType<typeof commitSchema>;
+export type Commit = InferSchemaType<typeof commitSchema> & {
+  _id: mongoose.Schema.Types.ObjectId;
+};
 
 export const CommitModel = model<Commit>("Commit", commitSchema);
