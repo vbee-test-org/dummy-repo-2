@@ -4,7 +4,7 @@ A simple tool to track a repository DORA metrics, currently we only implement 2 
 For more information about DORA metrics and how to calculate them, please visit [DevOps Research and Assessment (DORA) metrics](https://docs.gitlab.com/ee/user/analytics/dora_metrics.html)
 
 ## Usage
-[](./assets/home.png)
+![""](./assets/home.png)
 
 Input the link to your Github repository, for example: ["https://github.com/MusikStreaming/MusikStreamingBE"](https://github.com/MusikStreaming/MusikStreamingBE)
 
