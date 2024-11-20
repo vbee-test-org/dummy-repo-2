@@ -28,7 +28,7 @@ const processRepo = async (job: Job) => {
   // Scan for Docker image deployments in dev branch, releases in uat branch
   await Promise.all([
     TaskController.scanDeployments(repository, dev),
-    TaskController.scanReleases(repository, uat),
+    //TaskController.scanReleases(repository, uat),
   ]);
 
   await job.updateProgress(100);

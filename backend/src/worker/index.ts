@@ -25,7 +25,7 @@ export const startWorker = async (): Promise<Worker> => {
       });
 
       worker.on("failed", (job, err) => {
-        console.log(`[Worker]: Job ${job?.id} has failed with ${err.message}`);
+        console.log(`[Worker]: Job ${job?.id} has failed with ${err}`);
       });
 
       console.log("✅[Worker]: Background worker is ready");
