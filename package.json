@@ -8,8 +8,7 @@
     "start:client": "cd frontend &&  npm run start",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd backend && npm run dev",
-    "dev:client": "cd frontend && npm run dev",
-    "build": "cd backend && npm run build && cd ../frontend && npm run build"
+    "dev:client": "cd frontend && npm run dev"
   },
   "keywords": [],
   "author": "Zeann3th",

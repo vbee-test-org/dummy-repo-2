@@ -6,13 +6,13 @@ import morgan from "morgan";
 import { limiter } from "./middlewares/ratelimit";
 import { connectDB } from "@/services/mongoose";
 import { Server } from "http";
-import { jobRoutes, repositoryRoutes } from "./routes";
+import { apiRoutes } from "./routes";
+import path from "path";
 
 export const startServer = async (): Promise<Server> => {
   await connectDB("server");
 
   const app = express();
-  const port = env.PORT || 3000;
 
   // Content-Type
   app.use(express.json());
@@ -33,16 +33,19 @@ export const startServer = async (): Promise<Server> => {
   app.use(limiter);
 
   // Routes
-  app.get("/health", (req, res) => {
-    res.status(200).json({
-      msg: "Server is healthy",
-      last_checked: new Date().toISOString(),
+  app.use("/api", apiRoutes);
+
+  if (process.env.NODE_ENV === "production") {
+    app.use(
+      express.static(path.join(import.meta.dirname, "../../../frontend/dist")),
+    );
+
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(__dirname, "../../../frontend/dist/index.html"));
     });
-  });
+  }
 
-  app.use("/api/v1/repos", repositoryRoutes);
-  app.use("/api/v1/jobs", jobRoutes);
-
+  const port = env.PORT || 5000;
   return new Promise<Server>((resolve) => {
     const server = app.listen(port, () => {
       console.log("✅[Server]: Express server is ready");

@@ -15,6 +15,10 @@ const commitSchema = new Schema({
     ref: "Branch",
     required: true,
   },
+  created_at: {
+    type: Date,
+    required: true,
+  },
   commit_message: String,
   author: String,
 });
