@@ -28,8 +28,8 @@ WORKDIR /app
 
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/backend ./backend
-COPY --from=build /app/frontend ./frontend
+COPY --from=build /app/backend/bin ./backend/bin
+COPY --from=build /app/frontend/dist ./frontend/dist
 
 EXPOSE 5000 5173
 

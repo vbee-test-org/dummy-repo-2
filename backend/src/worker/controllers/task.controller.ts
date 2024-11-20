@@ -99,6 +99,7 @@ const scanDeployments = async (
             commit_message: commitDetails.message,
             repo_id: repository._id,
             branch_id: branch._id,
+            created_at: commitDetails.timestamp,
           });
           console.log(`Created new commit: ${commit.sha}`);
         }
@@ -113,6 +114,7 @@ const scanDeployments = async (
             name: run.name,
             repo_id: repository._id,
             branch_id: branch._id,
+            status: run.conclusion,
             commit_id: commit._id,
             started_at: run.run_started_at,
             finished_at: run.updated_at,
@@ -151,110 +153,45 @@ const scanReleases = async (
     ],
   );
 
-  const prsSHAs = prs.map((pr) => ({
-    sha: pr.merge_commit_sha,
-    type: "pull_request",
-    info: pr,
-  }));
-  const tagsData = tags.map((tag) => ({
-    sha: tag.commit.sha,
-    tagName: tag.name,
-    type: "tag",
-    info: tag,
-  }));
-  const releasesData = releases.map((release) => ({
-    tagName: release.tag_name,
-    type: "release",
-    info: release,
-  }));
+  const tagsBySha = new Map(tags.map((tag) => [tag.commit.sha, tag]));
 
-  // Create a map of commit SHAs with their source and details
-  const shaMap = new Map<string, { sources: Set<string>; details: any[] }>();
-  [...prsSHAs, ...tagsData].forEach(({ sha, type, info }) => {
-    if (!shaMap.has(sha!)) {
-      shaMap.set(sha!, { sources: new Set(), details: [] });
+  const releasesByTagName = new Map(
+    releases.map((release) => [release.tag_name, release]),
+  );
+
+  const prPromises = prs.map(async (pr) => {
+    try {
+      // Find matching tag and release
+      const matchingTag = tagsBySha.get(pr.merge_commit_sha!);
+      if (!matchingTag) return;
+
+      const matchingRelease = releasesByTagName.get(matchingTag.name);
+      if (!matchingRelease) return;
+
+      // Create and save commit
+      const commit = await CommitModel.create({
+        sha: pr.merge_commit_sha,
+        repo_id: repository._id,
+        branch_id: branch._id,
+        commit_message: pr.body || "No commit message provided",
+        author: pr.user?.login,
+        created_at: pr.merged_at,
+      });
+
+      // Create and save deployment
+      const deployment = await DeploymentModel.create({
+        repo_id: repository._id,
+        commit_id: commit._id,
+        name: matchingRelease.name || matchingTag.name,
+        status: "successful",
+        branch_id: branch._id,
+        started_at: pr.merged_at,
+        finished_at: matchingRelease.published_at,
+      });
+    } catch (err) {
+      console.log(err);
     }
-    shaMap.get(sha!)!.sources.add(type);
-    shaMap.get(sha!)!.details.push(info);
   });
-
-  // Find matching PRs and Tags by SHA
-  const shaMatches = Array.from(shaMap.entries())
-    .filter(([_, { sources }]) => sources.size > 1)
-    .map(([sha, { sources, details }]) => ({
-      sha,
-      sources: Array.from(sources),
-      details,
-    }));
-
-  // Match Releases by Tag Name
-  const tagNameMap = new Map<
-    string,
-    { sources: Set<string>; details: any[] }
-  >();
-  [...tagsData, ...releasesData].forEach(({ tagName, type, info }) => {
-    if (!tagNameMap.has(tagName)) {
-      tagNameMap.set(tagName, { sources: new Set(), details: [] });
-    }
-    tagNameMap.get(tagName)!.sources.add(type);
-    tagNameMap.get(tagName)!.details.push(info);
-  });
-
-  // Find tag name matches across tags and releases
-  const tagNameMatches = Array.from(tagNameMap.entries())
-    .filter(([_, { sources }]) => sources.size > 1)
-    .map(([tagName, { sources, details }]) => ({
-      tagName,
-      sources: Array.from(sources),
-      details,
-    }));
-
-  // Iterate through matched SHAs and create commits and deployments
-  for (const shaMatch of shaMatches) {
-    for (const prInfo of shaMatch.details) {
-      if (prInfo.type === "pull_request") {
-        const pr = prInfo as any;
-        const matchingTag = tagsData.find(
-          (tag) => tag.sha === pr.merge_commit_sha,
-        );
-
-        if (matchingTag) {
-          // Now find a matching release based on the tag name
-          const matchingRelease = releasesData.find(
-            (release) => release.tagName === matchingTag.tagName,
-          );
-
-          if (matchingRelease) {
-            // Create Commit
-            const commitMessage = pr.body || "No commit message provided";
-            const commit = await CommitModel.create({
-              sha: pr.merge_commit_sha,
-              repo_id: repository._id,
-              branch_id: branch._id,
-              commit_message: commitMessage,
-              author: pr.user.login,
-              created_at: new Date(pr.merged_at),
-            });
-
-            // Create Deployment
-            const deployment = await DeploymentModel.create({
-              repo_id: repository._id,
-              commit_id: commit._id,
-              name:
-                matchingRelease.info.name ||
-                `Deployment for ${matchingRelease.tagName}`,
-              branch_id: branch._id,
-              started_at: pr.merged_at,
-              finished_at: matchingRelease.info.published_at,
-            });
-
-            // Save deployment
-            await deployment.save();
-          }
-        }
-      }
-    }
-  }
 };
 
 const scanCustomDeployments = async (

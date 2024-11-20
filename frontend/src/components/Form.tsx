@@ -22,7 +22,7 @@ const Form = () => {
 
     try {
       const response = await axios.post<SubmitResponse>(
-        "http://127.0.0.1:5000/api/v1/jobs",
+        "/api/v1/jobs",
         {
           link: githubLink,
         },
