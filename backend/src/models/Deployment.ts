@@ -1,21 +1,23 @@
 import mongoose, { InferSchemaType, model, Schema } from "mongoose";
 
 const deploymentSchema = new Schema({
-  _id: {
-    type: Number,
+  repo_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Repository",
     required: true,
   },
   commit_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Commit",
+    required: true,
+  },
+  name: {
+    type: String,
     required: true,
   },
   branch_id: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-  },
-  service_name: {
-    type: String,
   },
   status: {
     type: String,
@@ -38,7 +40,9 @@ const deploymentSchema = new Schema({
   },
 });
 
-export type Deployment = InferSchemaType<typeof deploymentSchema>;
+export type Deployment = InferSchemaType<typeof deploymentSchema> & {
+  _id: mongoose.Schema.Types.ObjectId;
+};
 
 export const DeploymentModel = model<Deployment>(
   "Deployment",

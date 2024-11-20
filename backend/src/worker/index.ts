@@ -12,8 +12,8 @@ export const startWorker = async (): Promise<Worker> => {
 
       const worker = new Worker("runtimeQueue", task.processRepo, {
         connection: { url: env.REDIS_URL },
-        removeOnFail: { count: 5 },
-        removeOnComplete: { age: 300, count: 0 },
+        removeOnFail: { count: 0 },
+        removeOnComplete: { age: 300 },
       });
 
       worker.on("active", (job) => {
@@ -25,7 +25,7 @@ export const startWorker = async (): Promise<Worker> => {
       });
 
       worker.on("failed", (job, err) => {
-        console.log(`[Worker]: Job ${job?.id} has failed with ${err.message}`);
+        console.log(`[Worker]: Job ${job?.id} has failed with ${err}`);
       });
 
       console.log("✅[Worker]: Background worker is ready");

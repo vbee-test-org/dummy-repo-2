@@ -3,12 +3,10 @@ import express, { Express, Request } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import path, { dirname } from "path";
 import { limiter } from "./middlewares/ratelimit";
 import { connectDB } from "@/services/mongoose";
 import { Server } from "http";
 import { jobRoutes, repositoryRoutes } from "./routes";
-import { fileURLToPath } from "url";
 
 export const startServer = async (): Promise<Server> => {
   await connectDB("server");
@@ -20,7 +18,12 @@ export const startServer = async (): Promise<Server> => {
   app.use(express.json());
 
   // Security
-  app.use(cors<Request>({ origin: "*" }));
+  app.use(
+    cors<Request>({
+      origin: ["http://127.0.0.1:5173", "http://localhost:5173"],
+      methods: ["HEAD", "GET", "POST"],
+    }),
+  );
   app.use(helmet());
 
   // Logging
@@ -29,15 +32,7 @@ export const startServer = async (): Promise<Server> => {
   // Rate limiting
   app.use(limiter);
 
-  const __dirname = dirname(fileURLToPath(import.meta.url));
-
-  app.use("/public", express.static(path.join(__dirname, "../../public")));
-
   // Routes
-  app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../../public/index.html"));
-  });
-
   app.get("/health", (req, res) => {
     res.status(200).json({
       msg: "Server is healthy",
@@ -45,8 +40,8 @@ export const startServer = async (): Promise<Server> => {
     });
   });
 
-  app.use("/v1/repos", repositoryRoutes);
-  app.use("/v1/jobs", jobRoutes);
+  app.use("/api/v1/repos", repositoryRoutes);
+  app.use("/api/v1/jobs", jobRoutes);
 
   return new Promise<Server>((resolve) => {
     const server = app.listen(port, () => {
