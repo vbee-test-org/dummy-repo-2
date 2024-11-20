@@ -3,10 +3,6 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Root
-COPY package*.json ./
-RUN npm install
-
 # Backend
 WORKDIR /app/backend
 COPY backend/package*.json ./
@@ -26,14 +22,15 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-COPY --from=build /app/package*.json ./
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/backend/package*.json ./backend/
+COPY --from=build /app/backend/node_modules ./backend/node_modules
 COPY --from=build /app/backend/bin ./backend/bin
+
 COPY --from=build /app/frontend/dist ./frontend/dist
 
-EXPOSE 5000 5173
+EXPOSE 5000
 
 ENV NODE_ENV=production
 
-CMD ["npm", "run", "start"]
+CMD ["node", "./backend/bin/index.js"]
 
