@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
-    "start:server": "cd backend && npm run start",
-    "start:client": "cd frontend &&  npm run start",
+    "composer": "npm install && npm --prefix backend install && npm --prefix frontend install",
+    "start": "npm --prefix backend run start",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "cd backend && npm run dev",
-    "dev:client": "cd frontend && npm run dev"
+    "dev:server": "npm --prefix backend run dev",
+    "dev:client": "npm --prefix frontend run dev"
   },
   "keywords": [],
   "author": "Zeann3th",
