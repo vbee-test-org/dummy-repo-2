@@ -6,7 +6,12 @@ type SubmitResponse = {
   jobId?: string;
 };
 
-const Form = () => {
+type FormProps = {
+  showNotification: (message: string, type: "success" | "error") => void;
+  onUnauthorized: () => void; // Prop to handle 401 errors and trigger login redirect
+};
+
+const Form = ({ showNotification, onUnauthorized }: FormProps) => {
   const [githubLink, setGithubLink] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,34 +21,43 @@ const Form = () => {
       setError("Please enter a GitHub repository URL");
       return;
     }
-
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await axios.post<SubmitResponse>(
+      await axios.post<SubmitResponse>(
         "/api/v1/jobs",
-        {
-          link: githubLink,
-        },
+        { link: githubLink },
         {
           headers: {
             "Content-Type": "application/json",
           },
         },
       );
-
-      console.log("Server response:", response.data);
-      alert("Link submitted successfully!");
+      showNotification("Repository submitted successfully!", "success");
       setGithubLink("");
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        setError(
-          error.response?.data?.message || error.message || "An error occurred",
-        );
+        const errorMessage =
+          error.response?.data?.message || error.message || "An error occurred";
+
+        // Centralize the status code check for 401 errors
+        if (error.response?.status === 401) {
+          setError("Unauthorized. Redirecting to login...");
+          showNotification("Unauthorized. Redirecting to login...", "error");
+          setTimeout(() => {
+            onUnauthorized(); // Trigger the login redirection
+          }, 5000);
+        } else {
+          setError(errorMessage);
+          showNotification(errorMessage, "error");
+        }
+
         console.error("API Error:", error.response?.data);
       } else {
-        setError("An unexpected error occurred");
+        const errorMessage = "An unexpected error occurred";
+        setError(errorMessage);
+        showNotification(errorMessage, "error");
         console.error("Unexpected Error:", error);
       }
     } finally {
@@ -56,7 +70,6 @@ const Form = () => {
       <h2 className="text-3xl font-semibold text-center mb-6 bg-gradient-to-r from-[#58a6ff] to-[#4d8edb] bg-clip-text text-transparent">
         Enter GitHub Link
       </h2>
-
       <div className="mb-6">
         <label
           htmlFor="github-link"
@@ -78,7 +91,6 @@ const Form = () => {
         />
         {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
       </div>
-
       <button
         onClick={handleSubmit}
         disabled={isLoading}

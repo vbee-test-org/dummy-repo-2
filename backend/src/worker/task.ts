@@ -1,10 +1,23 @@
 import { Repository, Branch } from "@/models";
 import { Job } from "bullmq";
 import { TaskController } from "./controllers/task.controller";
+import { Octokit } from "@octokit/rest";
 
-const processRepo = async (job: Job) => {
+interface WData {
+  link: string;
+  user: {
+    id: string;
+    access_token: string;
+  };
+}
+
+const processRepo = async (job: Job<WData>) => {
   console.log("processing job");
-  const { link, id } = job.data;
+  const { link, user } = job.data;
+
+  const octokit = new Octokit({
+    auth: user.access_token,
+  });
 
   console.log("Scanning for repository...");
   // Extract owner and repository name from link
@@ -13,6 +26,8 @@ const processRepo = async (job: Job) => {
 
   // Checks for repository on database, if doesn't exist, create a new repository document
   const repository: Repository = await TaskController.createRepository(
+    octokit,
+    user.id,
     owner,
     repo,
   );
@@ -27,7 +42,7 @@ const processRepo = async (job: Job) => {
 
   // Scan for Docker image deployments in dev branch, releases in uat branch
   await Promise.all([
-    TaskController.scanDeployments(repository, dev),
+    TaskController.scanDeployments(octokit, repository, dev),
     //TaskController.scanReleases(repository, uat),
   ]);
 

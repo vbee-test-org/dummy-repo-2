@@ -1,6 +1,5 @@
-import octokit from "@/services/octokit";
 import { Request, Response, Router } from "express";
-import { RepositoryController } from "../controllers";
+import { RepositoryController } from "../controllers/repository.controller";
 
 const router = Router();
 

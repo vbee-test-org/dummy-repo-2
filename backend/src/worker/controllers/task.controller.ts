@@ -7,7 +7,7 @@ import {
   Repository,
   RepositoryModel,
 } from "@/models";
-import octokit from "@/services/octokit";
+import { Octokit } from "@octokit/rest";
 
 const extractUserInput = (link: string): [string, string] => {
   const parts = link.split("/");
@@ -17,19 +17,23 @@ const extractUserInput = (link: string): [string, string] => {
 };
 
 const createRepository = async (
+  client: Octokit,
+  user_id: string,
   owner: string,
   repo: string,
 ): Promise<Repository> => {
   let repository = await RepositoryModel.findOne({
+    user_id,
     name: repo,
     owner,
   });
   if (!repository) {
-    const { data } = await octokit.request("GET /repos/{owner}/{repo}", {
+    const { data } = await client.request("GET /repos/{owner}/{repo}", {
       owner,
       repo,
     });
     repository = await RepositoryModel.create({
+      user_id,
       name: repo,
       owner,
       private: data.private,
@@ -55,6 +59,7 @@ const createBranch = async (
 };
 
 const scanDeployments = async (
+  client: Octokit,
   repository: Repository,
   branch: Branch,
   options: {
@@ -63,7 +68,7 @@ const scanDeployments = async (
 ): Promise<void> => {
   const {
     data: { total_count: count, workflow_runs: runs },
-  } = await octokit.request("GET /repos/{owner}/{repo}/actions/runs", {
+  } = await client.request("GET /repos/{owner}/{repo}/actions/runs", {
     owner: repository.owner,
     repo: repository.name,
     branch: branch.name,
@@ -131,22 +136,23 @@ const scanDeployments = async (
 };
 
 const scanReleases = async (
+  client: Octokit,
   repository: Repository,
   branch: Branch,
 ): Promise<void> => {
   const [{ data: prs }, { data: tags }, { data: releases }] = await Promise.all(
     [
-      octokit.request("GET /repos/{owner}/{repo}/pulls", {
+      client.request("GET /repos/{owner}/{repo}/pulls", {
         owner: repository.owner,
         repo: repository.name,
         state: "closed",
         base: branch.name,
       }),
-      octokit.request("GET /repos/{owner}/{repo}/tags", {
+      client.request("GET /repos/{owner}/{repo}/tags", {
         owner: repository.owner,
         repo: repository.name,
       }),
-      octokit.request("GET /repos/{owner}/{repo}/releases", {
+      client.request("GET /repos/{owner}/{repo}/releases", {
         owner: repository.owner,
         repo: repository.name,
       }),

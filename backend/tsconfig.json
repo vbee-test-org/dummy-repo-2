@@ -13,6 +13,6 @@
     },
     "outDir": "./bin"
   },
-  "include": ["src/**/*.ts"], 
+  "include": ["src/**/*.ts", "src/configs/*.d.ts"], 
   "exclude": ["node_modules", "bin", "test", "sample"]
 }

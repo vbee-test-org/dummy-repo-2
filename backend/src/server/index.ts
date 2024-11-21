@@ -8,11 +8,25 @@ import { connectDB } from "@/services/mongoose";
 import { Server } from "http";
 import { apiRoutes } from "./routes";
 import path from "path";
+import session from "express-session";
 
 export const startServer = async (): Promise<Server> => {
   await connectDB("server");
 
   const app = express();
+
+  app.use(
+    session({
+      secret: env.SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        maxAge: 3 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+      },
+    }),
+  );
 
   // Content-Type
   app.use(express.json());
@@ -41,7 +55,9 @@ export const startServer = async (): Promise<Server> => {
     );
 
     app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "../../../frontend/dist/index.html"));
+      res.sendFile(
+        path.join(import.meta.dirname, "../../../frontend/dist/index.html"),
+      );
     });
   }
 
