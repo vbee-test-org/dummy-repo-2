@@ -19,6 +19,15 @@ const userSchema = new Schema({
   refresh_token: {
     type: String,
   },
+  is_authenticated: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
+  last_login: {
+    type: Date,
+    default: Date.now(),
+  },
 });
 
 export type User = InferSchemaType<typeof userSchema> & {

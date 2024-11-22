@@ -6,7 +6,7 @@ export const sessionChecker = (
   next: NextFunction,
 ) => {
   if (!req.session.user) {
-    return res.status(401).json({ error: "Unauthorized, please log in" });
+    return res.redirect(302, "/login");
   }
   next();
 };

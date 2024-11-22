@@ -9,7 +9,6 @@ const schema = z.object({
     .string({ required_error: "MONGO_URI is required" })
     .url("Expected MONGO_URI to be url"),
   MONGO_DB_NAME: z.string({ required_error: "MONGO_DB_NAME is required" }),
-  GH_PAT: z.string({ required_error: "GH_PAT is required" }).startsWith("ghp_"),
   GH_CLIENT_ID: z.string({ required_error: "GH_CLIENT_ID is required" }),
   GH_CLIENT_SECRET: z.string({
     required_error: "GH_CLIENT_SECRET is required",
