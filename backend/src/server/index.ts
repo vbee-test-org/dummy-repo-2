@@ -4,7 +4,6 @@ import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import lusca from "lusca";
 import session from "express-session";
 import { limiter } from "./middlewares/ratelimit";
 import { connectDB } from "@/services/mongoose";
@@ -25,6 +24,7 @@ export const startServer = async (): Promise<Server> => {
         maxAge: 3 * 24 * 60 * 60 * 1000,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
       },
     }),
   );
@@ -42,28 +42,16 @@ export const startServer = async (): Promise<Server> => {
     );
   }
 
-  if (process.env.NODE_ENV === "production") {
-    app.use(
-      lusca({
-        csrf: true,
-        xframe: "SAMEORIGIN",
-        xssProtection: true,
-      }),
-    );
-  }
-
   app.use(helmet());
 
   // Logging
   app.use(morgan(":method :url :status - :response-time ms"));
 
-  // Rate limiting
-  app.use(limiter);
-
   // Routes
   app.use("/api", apiRoutes);
 
   if (process.env.NODE_ENV === "production") {
+    app.use(limiter);
     app.use(
       express.static(path.join(import.meta.dirname, "../../../frontend/dist")),
     );

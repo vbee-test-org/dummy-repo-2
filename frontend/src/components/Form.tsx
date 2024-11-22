@@ -22,7 +22,7 @@ const Form = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [jobError, setJobError] = useState<string | null>(null);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
     if (!githubLink) {
@@ -75,12 +75,12 @@ const Form = () => {
           const { status, failedReason } = response.data;
 
           if (status === "completed") {
-            clearInterval(intervalId); 
-            navigate("/dashboard"); 
+            clearInterval(intervalId);
+            navigate("/dashboard");
           }
 
           if (status === "failed") {
-            clearInterval(intervalId); 
+            clearInterval(intervalId);
             setJobError(
               failedReason || "The job has failed. Please try again.",
             );
@@ -88,10 +88,10 @@ const Form = () => {
           }
         } catch (error) {
           console.error("Error fetching job status:", error);
-          clearInterval(intervalId); 
+          clearInterval(intervalId);
           setError("Error checking job status. Please try again later.");
         }
-      }, 5000); 
+      }, 5000);
     } catch (error) {
       setError("Error checking job status. Please try again later.");
     }
