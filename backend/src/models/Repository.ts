@@ -12,6 +12,10 @@ const repositorySchema = new Schema({
   private: {
     type: Boolean,
   },
+  user_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
 });
 
 export type Repository = InferSchemaType<typeof repositorySchema> & {
