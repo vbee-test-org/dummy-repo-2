@@ -1,14 +1,15 @@
 import env from "@/env";
 import express, { Express, Request } from "express";
+import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import lusca from "lusca";
+import session from "express-session";
 import { limiter } from "./middlewares/ratelimit";
 import { connectDB } from "@/services/mongoose";
 import { Server } from "http";
 import { apiRoutes } from "./routes";
-import path from "path";
-import session from "express-session";
 
 export const startServer = async (): Promise<Server> => {
   await connectDB("server");
@@ -32,12 +33,25 @@ export const startServer = async (): Promise<Server> => {
   app.use(express.json());
 
   // Security
-  app.use(
-    cors<Request>({
-      origin: ["http://127.0.0.1:5173", "http://localhost:5173"],
-      methods: ["HEAD", "GET", "POST"],
-    }),
-  );
+  if (process.env.NODE_ENV === "development") {
+    app.use(
+      cors<Request>({
+        origin: ["http://127.0.0.1:5173", "http://localhost:5173"],
+        methods: ["HEAD", "GET", "POST"],
+      }),
+    );
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    app.use(
+      lusca({
+        csrf: true,
+        xframe: "SAMEORIGIN",
+        xssProtection: true,
+      }),
+    );
+  }
+
   app.use(helmet());
 
   // Logging
