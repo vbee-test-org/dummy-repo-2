@@ -49,6 +49,7 @@ const Form = () => {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
         },
       );
 
@@ -58,7 +59,16 @@ const Form = () => {
         await checkJobStatus(response.data.jobId);
       }
     } catch (error) {
-      setError("Failed to submit. Please try again.");
+      if (axios.isAxiosError(error) && error.response) {
+        if (error.response.status === 401) {
+          // Unauthorized - redirect to login
+          navigate("/login");
+        } else {
+          setError("Failed to submit. Please try again.");
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

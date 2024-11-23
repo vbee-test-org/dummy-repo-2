@@ -11,7 +11,9 @@ const HomePage = () => {
     // Check if user is logged in
     const checkLoginStatus = async () => {
       try {
-        const response = await axios.get("/api/v1/auth/status");
+        const response = await axios.get("/api/v1/auth/status", {
+          withCredentials: true,
+        });
         if (response.status === 200) {
           setIsLoggedIn(true);
         }

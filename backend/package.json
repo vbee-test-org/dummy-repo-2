@@ -16,6 +16,7 @@
     "@octokit/rest": "^21.0.2",
     "axios": "^1.7.7",
     "bullmq": "^5.26.1",
+    "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
@@ -27,11 +28,9 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/express-session": "^1.18.0",
-    "@types/lusca": "^1.7.5",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.9.0",
     "nodemon": "^3.1.7",
