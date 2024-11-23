@@ -197,7 +197,8 @@ const scanReleases = async (
   });
 };
 
-const scanCustomDeployments = async (
+const scanDeploymentsFromGoogleDocs = async (
+  client: Octokit,
   repository: Repository,
   branch: Branch,
 ): Promise<void> => {};
@@ -208,7 +209,7 @@ const TaskController = {
   createBranch,
   scanDeployments,
   scanReleases,
-  scanCustomDeployments,
+  scanDeploymentsFromGoogleDocs,
 };
 
 export { TaskController };

@@ -40,7 +40,8 @@ const processRepo = async (job: Job<WData>) => {
   // Scan for Docker image deployments in dev branch, releases in uat branch
   await Promise.all([
     TaskController.scanDeployments(octokit, repository, dev),
-    //TaskController.scanReleases(repository, uat),
+    () => {}, //TaskController.scanReleases(octokit, repository, uat)
+    TaskController.scanDeploymentsFromGoogleDocs(octokit, repository, prod),
   ]);
 
   await job.updateProgress(100);

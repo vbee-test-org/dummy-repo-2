@@ -4,3 +4,4 @@ node_modules
 # backend
 bin
 .env
+google.json
