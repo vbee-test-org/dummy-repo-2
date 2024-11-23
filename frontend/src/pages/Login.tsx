@@ -8,7 +8,7 @@ const LoginPage = () => {
   const handleGithubLogin = () => {
     if (hasAgreed) {
       // Redirect to the GitHub OAuth URL for login
-      window.location.href = "/api/v1/auth";
+      window.location.href = "/api/v1/auth/login";
     } else {
       alert("Please agree to the disclaimer before proceeding.");
     }
