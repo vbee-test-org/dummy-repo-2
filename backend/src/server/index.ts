@@ -22,16 +22,12 @@ export const startServer = async (): Promise<Server> => {
       secret: env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
-      cookie: {
-        maxAge: 1 * 60 * 60 * 1000,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      },
       store: new MongoStore({
         client: mongoose.connection.getClient(),
         dbName: env.MONGO_DB_NAME,
         autoRemove: "native",
+        ttl: 60 * 60 * 24,
+        touchAfter: 60 * 60 * 2,
       }),
     }),
   );
