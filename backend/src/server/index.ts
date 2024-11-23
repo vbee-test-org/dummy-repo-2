@@ -9,6 +9,8 @@ import { limiter } from "./middlewares/ratelimit";
 import { connectDB } from "@/services/mongoose";
 import { Server } from "http";
 import { apiRoutes } from "./routes";
+import MongoStore from "connect-mongo";
+import mongoose from "mongoose";
 
 export const startServer = async (): Promise<Server> => {
   await connectDB("server");
@@ -21,11 +23,16 @@ export const startServer = async (): Promise<Server> => {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        maxAge: 3 * 24 * 60 * 60 * 1000,
+        maxAge: 1 * 60 * 60 * 1000,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+        sameSite: "lax",
       },
+      store: new MongoStore({
+        client: mongoose.connection.getClient(),
+        dbName: env.MONGO_DB_NAME,
+        autoRemove: "native",
+      }),
     }),
   );
 
@@ -38,6 +45,7 @@ export const startServer = async (): Promise<Server> => {
       cors<Request>({
         origin: ["http://127.0.0.1:5173", "http://localhost:5173"],
         methods: ["HEAD", "GET", "POST"],
+        credentials: true,
       }),
     );
   }

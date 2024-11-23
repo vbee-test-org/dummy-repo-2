@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 
-export const sessionChecker = (
+export const sessionChecker = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   if (!req.session.user) {
-    return res.redirect(302, "/login");
+    res.status(401).json({ error: "Unauthorized" });
+    return;
   }
   next();
 };
