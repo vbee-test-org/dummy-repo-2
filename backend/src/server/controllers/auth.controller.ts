@@ -3,35 +3,40 @@ import { User, UserModel } from "@/models";
 import axios from "axios";
 import { Request, RequestHandler, Response } from "express";
 
-const getLoginStatus: RequestHandler = async (req: Request, res: Response) => {
-  if (!req.session.user) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  res.status(200).json({ message: "User is logged in" });
-};
-
 const LoginUsingGithubOAuth: RequestHandler = async (
   req: Request,
   res: Response,
 ) => {
   res.redirect(
     302,
-    `https://github.com/login/oauth/authorize?client_id=${env.GH_CLIENT_ID}&scope=user%20repo`,
+    `https://github.com/login/oauth/authorize?client_id=${env.GH_CLIENT_ID}&scope=read:user%20repo`,
   );
 };
 
 const LogOut: RequestHandler = async (req, res) => {
+  const sessionUser = req.session.user;
+  if (!sessionUser) {
+    res.status(500).json({ error: "Failed to fetch user's session" });
+  }
+
   try {
-    await new Promise<void>((resolve, reject) => {
-      req.session.destroy((err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
+    await Promise.all([
+      UserModel.updateOne(
+        {
+          github_id: sessionUser?.github_id,
+        },
+        { is_authenticated: false },
+      ),
+      new Promise<void>((resolve, reject) => {
+        req.session.destroy((err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      }),
+    ]);
 
     res.clearCookie("connect.sid");
 
@@ -79,10 +84,12 @@ const HandleGithubCallback: RequestHandler = async (
         is_authenticated: true,
         last_login: new Date().toISOString(),
       });
+    } else {
+      (user.is_authenticated = true), (user.last_login = new Date());
+      await user.save();
     }
 
     req.session.user = user;
-    req.session.save();
 
     return res.redirect(302, "/");
   } catch (error) {
@@ -94,7 +101,6 @@ const AuthController = {
   HandleGithubCallback,
   LoginUsingGithubOAuth,
   LogOut,
-  getLoginStatus,
 };
 
 export { AuthController };

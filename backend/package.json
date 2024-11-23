@@ -13,6 +13,7 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
+    "@octokit/auth-oauth-app": "^8.1.1",
     "@octokit/rest": "^21.0.2",
     "axios": "^1.7.7",
     "bullmq": "^5.26.1",

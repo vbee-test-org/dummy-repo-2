@@ -7,14 +7,19 @@ const queueJob: RequestHandler = async (req: Request, res: Response) => {
 
   if (!link) {
     res.status(400).json({ error: "Link is required" });
+    return;
+  }
+
+  const sessionUser = req.session.user;
+
+  if (!sessionUser) {
+    res.status(500).json({ error: "Failed to fetch user's session" });
+    return;
   }
 
   const job = await queue.add("repo", {
     link,
-    user: {
-      id: req.session.user!._id,
-      access_token: req.session.user!.access_token,
-    },
+    user_id: sessionUser._id,
   });
 
   res.status(202).json({ message: "Task is being processed", jobId: job.id });

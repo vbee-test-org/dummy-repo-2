@@ -2,21 +2,24 @@ import { Repository, Branch } from "@/models";
 import { Job } from "bullmq";
 import { TaskController } from "./controllers/task.controller";
 import { Octokit } from "@octokit/rest";
+import { createOAuthAppAuth } from "@octokit/auth-oauth-app";
+import env from "@/env";
 
 interface WData {
   link: string;
-  user: {
-    id: string;
-    access_token: string;
-  };
+  user_id: string;
 }
 
 const processRepo = async (job: Job<WData>) => {
   console.log("processing job");
-  const { link, user } = job.data;
+  const { link, user_id } = job.data;
 
   const octokit = new Octokit({
-    auth: user.access_token,
+    authStrategy: createOAuthAppAuth,
+    auth: {
+      clientId: env.GH_CLIENT_ID,
+      clientSecret: env.GH_CLIENT_SECRET,
+    },
   });
 
   console.log("Scanning for repository...");
@@ -27,7 +30,7 @@ const processRepo = async (job: Job<WData>) => {
   // Checks for repository on database, if doesn't exist, create a new repository document
   const repository: Repository = await TaskController.createRepository(
     octokit,
-    user.id,
+    user_id,
     owner,
     repo,
   );
