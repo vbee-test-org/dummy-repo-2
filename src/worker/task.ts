@@ -23,25 +23,20 @@ const processRepo = async (job: Job<WData>) => {
   const [owner, repo] = TaskController.extractUserInput(link);
 
   // Checks for repository on database, if doesn't exist, create a new repository document
-  const repository: Repository = await TaskController.createRepository(
+  const repository: Repository = await TaskController.scanRepository(
     octokit,
     owner,
     repo,
   );
 
-  // Checks for branches in repository (hard-coded branches, may fix later)
-  const [dev, uat, prod]: Branch[] = await Promise.all([
-    TaskController.createBranch(repository, "dev"),
-    TaskController.createBranch(repository, "uat"),
-    TaskController.createBranch(repository, "prod"),
-  ]);
+  const branch = await TaskController.createBranch(repository, "main");
+
   await job.updateProgress(50);
 
-  // Scan for Docker image deployments in dev branch, releases in uat branch
   await Promise.all([
-    TaskController.scanDeployments(octokit, repository, dev),
-    () => {}, //TaskController.scanReleases(octokit, repository, uat)
-    TaskController.scanDeploymentsFromGoogleDocs(octokit, repository, prod),
+    TaskController.scanDeployments(octokit, repository, branch),
+    //() => {}, //TaskController.scanReleases(octokit, repository, uat)
+    //TaskController.scanDeploymentsFromGoogleDocs(octokit, repository, prod),
   ]);
 
   await job.updateProgress(100);

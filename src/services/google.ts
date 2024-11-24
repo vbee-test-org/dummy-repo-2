@@ -7,7 +7,7 @@ class GoogleAPIClient {
 
   constructor() {
     this.auth = new google.auth.GoogleAuth({
-      keyFile: path.resolve(import.meta.dirname, "./google.json"),
+      keyFile: path.resolve(import.meta.dirname, "../../google.json"),
       scopes: ["https://www.googleapis.com/auth/documents.readonly"],
     });
   }

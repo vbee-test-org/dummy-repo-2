@@ -3,11 +3,13 @@ import {
   BranchModel,
   Commit,
   CommitModel,
+  Deployment,
   DeploymentModel,
   Repository,
   RepositoryModel,
 } from "@/models";
 import { Octokit } from "@octokit/rest";
+import { deploymentmanager_v2 } from "googleapis";
 
 const extractUserInput = (link: string): [string, string] => {
   const parts = link.split("/");
@@ -16,7 +18,7 @@ const extractUserInput = (link: string): [string, string] => {
   return [owner, repo];
 };
 
-const createRepository = async (
+const scanRepository = async (
   client: Octokit,
   owner: string,
   repo: string,
@@ -55,6 +57,58 @@ const createBranch = async (
   return branch;
 };
 
+const scanCommits = async (
+  client: Octokit,
+  repository: Repository,
+  branch: Branch,
+): Promise<Commit[]> => {
+  const { data: commits } = await client.request(
+    "GET /repos/{owner}/{repo}/commits",
+    { owner: repository.owner, repo: repository.name, sha: branch.name },
+  );
+
+  const promisedCommits = commits.map(async (commit) => {
+    try {
+      // Check if commit exists
+      let cmt = await CommitModel.findOne({
+        repo_id: repository._id,
+        branch_id: branch._id,
+        sha: commit.sha,
+      });
+      // If not exist, create new
+      if (!cmt) {
+        const author = commit.commit.author?.name;
+        const commit_message = commit.commit.message;
+        const created_at = commit.commit.committer?.date;
+        // No Date = skip
+        if (!created_at) {
+          console.warn(
+            `Skipping commit ${commit.sha} due to missing required fields`,
+          );
+          return null;
+        }
+
+        cmt = await CommitModel.create({
+          repo_id: repository._id,
+          branch_id: branch._id,
+          sha: commit.sha,
+          commit_message,
+          author,
+          created_at,
+        });
+      }
+      return cmt;
+    } catch (error) {
+      console.log(`Error processing commit ${commit.sha}: ${error}`);
+      return null;
+    }
+  });
+
+  const processedCommits = await Promise.all(promisedCommits);
+
+  return processedCommits.filter((commit) => commit !== null);
+};
+
 const scanDeployments = async (
   client: Octokit,
   repository: Repository,
@@ -62,7 +116,7 @@ const scanDeployments = async (
   options: {
     filter?: string;
   } = {},
-): Promise<void> => {
+): Promise<Deployment[]> => {
   const {
     data: { total_count: count, workflow_runs: runs },
   } = await client.request("GET /repos/{owner}/{repo}/actions/runs", {
@@ -73,7 +127,7 @@ const scanDeployments = async (
 
   if (count === 0) {
     console.log("No workflow runs found!");
-    return;
+    return [];
   }
 
   const filteredRuns = options.filter
@@ -82,54 +136,92 @@ const scanDeployments = async (
       )
     : runs;
 
-  const processedDeployments = await Promise.all(
-    filteredRuns.map(async (run) => {
-      const commitDetails = run.head_commit;
-      if (!commitDetails) {
-        console.log(`Skipping run ${run.name} - no commit details`);
-        return null;
-      }
+  const commits = await scanCommits(client, repository, branch);
 
-      try {
-        // Get or create commit
-        let commit = await CommitModel.findOne({
-          sha: commitDetails.id,
-        });
-        if (!commit) {
-          commit = await CommitModel.create({
-            sha: commitDetails.id,
-            commit_message: commitDetails.message,
-            repo_id: repository._id,
-            branch_id: branch._id,
-            created_at: commitDetails.timestamp,
-          });
-          console.log(`Created new commit: ${commit.sha}`);
-        }
-
-        // Get or create deployment
-        let deployment = await DeploymentModel.findOne({
-          commit_id: commit._id,
-        });
-
-        if (!deployment) {
-          deployment = await DeploymentModel.create({
-            name: run.name,
-            repo_id: repository._id,
-            branch_id: branch._id,
-            status: run.conclusion,
-            commit_id: commit._id,
-            started_at: run.run_started_at,
-            finished_at: run.updated_at,
-          });
-        }
-
-        return deployment;
-      } catch (error) {
-        console.error(`Error processing run ${run.name}:`, error);
-        return null;
-      }
-    }),
+  const commitMap = new Map<string, Commit>(
+    commits.map((commit) => [commit.sha, commit]),
   );
+
+  const commitStatusMap = new Map<string, boolean>(
+    Array.from(commitMap.keys()).map((sha) => [sha, false]),
+  );
+
+  const promisedDeployments = filteredRuns.map(async (run) => {
+    const commit = commitMap.get(run.head_sha);
+    if (!commit) {
+      return null;
+    }
+    let deployment = await DeploymentModel.findOne({
+      repo_id: repository._id,
+      branch_id: branch._id,
+      commit_id: commit._id,
+      name: run.name,
+    });
+    if (!deployment) {
+      deployment = await DeploymentModel.create({
+        repo_id: repository._id,
+        branch_id: branch._id,
+        commit_id: commit._id,
+        name: run.name,
+        status: run.conclusion,
+        started_at: commit.created_at,
+        finished_at: run.updated_at,
+      });
+    }
+    commitStatusMap.set(commit.sha, true);
+    return deployment;
+  });
+
+  let processedDeployments = (await Promise.all(promisedDeployments)).filter(
+    (deployment) => deployment !== null,
+  ) as Deployment[];
+
+  processedDeployments.sort(
+    (a, b) => a.started_at.getTime() - b.started_at.getTime(),
+  );
+
+  for (const [sha, used] of commitStatusMap.entries()) {
+    if (!used) {
+      const commit = commitMap.get(sha);
+      if (!commit) continue;
+
+      // If commit.created_at > last deployement started_at => this is not deployed
+      if (
+        processedDeployments.length > 0 &&
+        commit.created_at.getTime() >
+          processedDeployments[
+            processedDeployments.length - 1
+          ].started_at.getTime()
+      ) {
+        continue;
+      }
+
+      let insertIndex = processedDeployments.length;
+      for (let i = 0; i < processedDeployments.length; i++) {
+        if (
+          commit.created_at.getTime() <
+          processedDeployments[i].started_at.getTime()
+        ) {
+          insertIndex = i;
+          break;
+        }
+      }
+
+      const newDeployment = await DeploymentModel.create({
+        repo_id: repository._id,
+        branch_id: branch._id,
+        commit_id: commit._id,
+        name: processedDeployments[insertIndex].name,
+        status: processedDeployments[insertIndex].status,
+        started_at: new Date(commit.created_at),
+        finished_at: new Date(commit.created_at),
+      });
+
+      processedDeployments.splice(insertIndex, 0, newDeployment);
+    }
+  }
+
+  return processedDeployments;
 };
 
 const scanReleases = async (
@@ -205,8 +297,9 @@ const scanDeploymentsFromGoogleDocs = async (
 
 const TaskController = {
   extractUserInput,
-  createRepository,
+  scanRepository,
   createBranch,
+  scanCommits,
   scanDeployments,
   scanReleases,
   scanDeploymentsFromGoogleDocs,
