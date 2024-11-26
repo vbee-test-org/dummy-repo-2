@@ -1,36 +1,29 @@
-# Stage 1: Build backend and frontend
+# Stage 1
 FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Backend
-WORKDIR /app/backend
-COPY backend/package*.json ./
+COPY package*.json ./
+
 RUN npm install
-COPY backend ./
+
+COPY . .
+
 RUN npm run build
 
-# Frontend
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend ./
-RUN npm run build
-
-# Stage 2: Production image
+# Stage 2
 FROM node:20-alpine AS production
 
 WORKDIR /app
 
-COPY --from=build /app/backend/package*.json ./backend/
-COPY --from=build /app/backend/node_modules ./backend/node_modules
-COPY --from=build /app/backend/bin ./backend/bin
+COPY --from=build /app/bin ./bin
+COPY --from=build /app/public ./public
+COPY package*.json ./
 
-COPY --from=build /app/frontend/dist ./frontend/dist
+RUN npm install --only=production
 
 EXPOSE 5000
 
-ENV NODE_ENV=production
+ENV NODE_ENV production
 
-CMD ["node", "./backend/bin/index.js"]
-
+CMD ["node", "bin/index.js"]

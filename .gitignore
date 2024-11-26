@@ -1,16 +1,7 @@
 # node_modules
 node_modules
-backend/node_modules
-frontend/node_modules
 
 # backend
-backend/bin
-backend/.env
-
-# frontend
-frontend/logs
-frontend/*.log
-frontend/npm-debug.log*
-frontend/dist
-frontend/dist-ssr
-frontend/*.local
+bin
+.env
+google.json

@@ -1,20 +1,40 @@
 {
   "name": "dora-tracker",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "./bin/index.js",
+  "type": "module",
   "scripts": {
-    "composer": "npm install && npm --prefix backend install && npm --prefix frontend install",
-    "start": "npm --prefix backend run start",
-    "build": "npm --prefix backend run build && npm --prefix frontend run build",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "npm --prefix backend run dev",
-    "dev:client": "npm --prefix frontend run dev"
+    "build": "npx tsc && npx resolve-tspaths",
+    "start": "node bin/index.js",
+    "dev": "npx nodemon -q",
+    "test": "node --import tsx -r tsconfig-paths/register --test test/**/*.test.ts"
   },
-  "keywords": [],
   "author": "Zeann3th",
   "license": "MIT",
   "description": "",
   "dependencies": {
-    "concurrently": "^9.1.0"
+    "@octokit/rest": "^21.0.2",
+    "axios": "^1.7.7",
+    "bullmq": "^5.26.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "googleapis": "^144.0.0",
+    "helmet": "^8.0.0",
+    "mongoose": "^8.8.0",
+    "morgan": "^1.10.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.9.0",
+    "nodemon": "^3.1.7",
+    "resolve-tspaths": "^0.8.22",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
   }
 }
