@@ -29,7 +29,9 @@ const processRepo = async (job: Job<WData>) => {
     repo,
   );
 
-  console.log("Scanning for default branch...");
+  console.log(
+    `Scanning for default branch in ${repository.owner}/${repository.name}...`,
+  );
   const branch = await TaskController.scanDefaultBranch(repository);
 
   console.log(
@@ -39,9 +41,11 @@ const processRepo = async (job: Job<WData>) => {
 
   await job.updateProgress(50);
 
-  console.log(`Scanning deployments from repository ${repository.name}`);
+  console.log(
+    `Scanning deployments from ${repository.owner}/${repository.name}`,
+  );
   await Promise.all([
-    TaskController.scanDeployments(octokit, repository, branch, commits),
+    TaskController.scanWorkflows(octokit, repository, branch, commits),
     TaskController.scanReleases(octokit, repository, branch, commits),
     //TaskController.scanDeploymentsFromGoogleDocs(octokit, repository, prod),
   ]);

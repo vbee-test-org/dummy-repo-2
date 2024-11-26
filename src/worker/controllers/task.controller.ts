@@ -68,7 +68,7 @@ const scanCommits = async (
         repo_id: repository._id,
         branch_id: branch._id,
         sha: commit.sha,
-      });
+      }).then();
       // If not exist, create new
       if (!cmt) {
         const author = commit.commit.author?.name;
@@ -103,66 +103,63 @@ const scanCommits = async (
   return processedCommits.filter((commit) => commit !== null);
 };
 
-const scanDeployments = async (
+const scanWorkflows = async (
   client: Octokit,
   repository: Repository,
   branch: Branch,
   commits: Commit[],
-  filter: {
-    name?: string;
-    since?: Date;
-    to?: Date;
+  opts: {
+    filter?: string;
+    return?: boolean;
   } = {},
-): Promise<void> => {
-  const runs = await client.paginate("GET /repos/{owner}/{repo}/actions/runs", {
-    owner: repository.owner,
-    repo: repository.name,
-    branch: branch.name,
-  });
-
-  if (runs.length === 0) {
-    console.log("No workflow runs found!");
-    return;
+): Promise<Deployment[] | void> => {
+  if (!commits?.length) {
+    console.log("No commits provided!");
+    return opts.return ? [] : undefined;
   }
 
-  const filteredRuns = runs.filter((run) => {
-    // If have name filter
-    const nameMatches = filter.name
-      ? run.name?.toLowerCase().includes(filter.name.toLowerCase())
-      : true;
+  let runs;
+  try {
+    runs = await client.paginate("GET /repos/{owner}/{repo}/actions/runs", {
+      owner: repository.owner,
+      repo: repository.name,
+      branch: branch.name,
+    });
+  } catch (error) {
+    console.error("[Worker]: Error fetching workflow runs", error);
+    return opts.return ? [] : undefined;
+  }
 
-    // If have start date
-    const sinceMatches = filter.since
-      ? new Date(run.created_at) >= filter.since
-      : true;
+  // Early return if no runs
+  if (!runs?.length) {
+    console.log("No workflow runs found!");
+    return opts.return ? [] : undefined;
+  }
 
-    // If have end date
-    const toMatches = filter.to ? new Date(run.created_at) <= filter.to : true;
+  const filterName = opts.filter?.toLowerCase();
+  const filteredRuns = filterName
+    ? runs.filter((run) => run.name?.toLowerCase().includes(filterName))
+    : runs;
 
-    return nameMatches && sinceMatches && toMatches;
-  });
+  if (!filteredRuns.length) {
+    console.log("No matching workflow runs found with the specified filter!");
+    return opts.return ? [] : undefined;
+  }
 
-  const commitMap = new Map<string, Commit>(
-    commits.map((commit) => [commit.sha, commit]),
-  );
+  const commitMap = new Map(commits.map((commit) => [commit.sha, commit]));
 
-  const commitStatusMap = new Map<string, boolean>(
-    Array.from(commitMap.keys()).map((sha) => [sha, false]),
-  );
-
-  // Deployments
   const deploymentPromises = filteredRuns.map(async (run) => {
+    const commit = commitMap.get(run.head_sha);
+    if (!commit) return null;
+
     try {
-      const commit = commitMap.get(run.head_sha);
-      if (!commit) {
-        return null;
-      }
       let deployment = await DeploymentModel.findOne({
         repo_id: repository._id,
         branch_id: branch._id,
         commit_id: commit._id,
         name: run.name,
       });
+
       if (!deployment) {
         deployment = await DeploymentModel.create({
           repo_id: repository._id,
@@ -170,26 +167,27 @@ const scanDeployments = async (
           commit_id: commit._id,
           name: run.name,
           status: run.conclusion,
-          started_at: commit.created_at,
+          started_at: run.created_at,
           finished_at: run.updated_at,
         });
       }
-      commitStatusMap.set(commit.sha, true);
+
       return deployment;
     } catch (error) {
       console.error(
-        "[Worker]: scanReleases - Error processing deployment:",
+        `[Worker]: Error processing deployment for run ${run.name}:`,
         error,
       );
       return null;
     }
   });
 
-  let processedDeployments = (await Promise.all(deploymentPromises)).filter(
-    (deployment) => deployment !== null,
-  ) as Deployment[];
-
-  //handleDeploymentEdgeCases(processedDeployments, commitMap, commitStatusMap);
+  if (opts.return) {
+    const deployments = (await Promise.all(deploymentPromises)).filter(
+      (deployment) => deployment !== null,
+    );
+    return deployments;
+  }
 };
 
 const scanReleases = async (
@@ -197,28 +195,39 @@ const scanReleases = async (
   repository: Repository,
   branch: Branch,
   commits: Commit[],
-): Promise<void> => {
-  const [tags, releases] = await Promise.all([
-    client.paginate("GET /repos/{owner}/{repo}/tags", {
-      owner: repository.owner,
-      repo: repository.name,
-    }),
-    client.paginate("GET /repos/{owner}/{repo}/releases", {
-      owner: repository.owner,
-      repo: repository.name,
-    }),
-  ]);
+  opts: {
+    return?: boolean;
+  } = {},
+): Promise<Deployment[] | void> => {
+  if (!commits?.length) {
+    console.log("No commits provided");
+    return opts.return ? [] : undefined;
+  }
 
-  // Map commits by SHA for quick lookup
-  const commitMap = new Map<string, Commit>(
-    commits.map((commit) => [commit.sha, commit]),
-  );
+  let tags, releases;
+  try {
+    [tags, releases] = await Promise.all([
+      client.paginate("GET /repos/{owner}/{repo}/tags", {
+        owner: repository.owner,
+        repo: repository.name,
+      }),
+      client.paginate("GET /repos/{owner}/{repo}/releases", {
+        owner: repository.owner,
+        repo: repository.name,
+      }),
+    ]);
+  } catch (error) {
+    console.error("[Worker]: Error fetching tags or releases", error);
+    return opts.return ? [] : undefined;
+  }
 
-  const commitStatusMap = new Map<string, boolean>(
-    Array.from(commitMap.keys()).map((sha) => [sha, false]),
-  );
+  if (!tags?.length || !releases?.length) {
+    console.log("No tags or releases found");
+    return opts.return ? [] : undefined;
+  }
 
-  // Map tags by name for matching release tags
+  const commitMap = new Map(commits.map((commit) => [commit.sha, commit]));
+  const commitStatusMap = new Map(commits.map((commit) => [commit.sha, false]));
   const tagsByName = new Map(tags.map((tag) => [tag.name, tag]));
 
   const deploymentPromises = releases.map(async (release) => {
@@ -231,7 +240,7 @@ const scanReleases = async (
 
       commitStatusMap.set(matchingCommit.sha, true);
 
-      return await DeploymentModel.create({
+      const deployment = await DeploymentModel.create({
         repo_id: repository._id,
         commit_id: matchingCommit._id,
         name: release.name || matchingTag.name,
@@ -240,36 +249,50 @@ const scanReleases = async (
         started_at: matchingCommit.created_at,
         finished_at: release.published_at,
       });
+
+      return deployment;
     } catch (error) {
       console.log(
-        "[Worker]: scanReleases - Error processing deployment:",
+        `[Worker]: Error creating deployment for release ${release.name}:`,
         error,
       );
       return null;
     }
   });
 
-  let processedDeployments = (await Promise.all(deploymentPromises)).filter(
+  // Await all deployments
+  const processedDeployments = (await Promise.all(deploymentPromises)).filter(
     (deployment) => deployment !== null,
   );
 
-  handleDeploymentEdgeCases(processedDeployments, commitMap, commitStatusMap);
+  // Handle edge cases
+  const finalDeployments = handleDeploymentEdgeCases(
+    processedDeployments,
+    commitMap,
+    commitStatusMap,
+  );
+
+  return opts.return ? finalDeployments : undefined;
 };
 
 const scanDeploymentsFromGoogleDocs = async (
   client: Octokit,
   repository: Repository,
   branch: Branch,
-): Promise<void> => {};
+  commits: Commit[],
+): Promise<void> => {
+  console.log("TO BE IMPLEMENTED");
+};
 
 const handleDeploymentEdgeCases = async (
   deployments: Deployment[],
   commitMap: Map<string, Commit>,
   commitStatusMap: Map<string, boolean>,
-): Promise<void> => {
+): Promise<Deployment[]> => {
+  // Sort existing deployments
   deployments.sort((a, b) => a.started_at.getTime() - b.started_at.getTime());
 
-  const additionalDeployments = [];
+  const deploymentPromises: Promise<Deployment>[] = [];
 
   for (const [sha, used] of commitStatusMap.entries()) {
     if (!used) {
@@ -296,15 +319,18 @@ const handleDeploymentEdgeCases = async (
       // Ensure targetIdx is within bounds before accessing deployments[targetIdx]
       if (targetIdx < deployments.length) {
         const targetDeployment = deployments[targetIdx];
-        additionalDeployments.push({
+
+        const newDeployment = DeploymentModel.create({
           repo_id: targetDeployment.repo_id,
           branch_id: targetDeployment.branch_id,
           commit_id: commit._id,
-          name: targetDeployment.name || "Unknown Deployment",
-          status: targetDeployment.status || "unknown",
+          name: targetDeployment.name,
+          status: targetDeployment.status,
           started_at: commit.created_at,
           finished_at: targetDeployment.finished_at,
         });
+
+        deploymentPromises.push(newDeployment);
       } else {
         console.log(
           `Skipping commit with sha ${sha}, no matching deployment found.`,
@@ -313,10 +339,12 @@ const handleDeploymentEdgeCases = async (
     }
   }
 
-  // Insert new deployments if any
-  if (additionalDeployments.length > 0) {
-    await DeploymentModel.insertMany(additionalDeployments);
-  }
+  const additionalDeployments = await Promise.all(deploymentPromises);
+  const allDeployments = [...deployments, ...additionalDeployments].sort(
+    (a, b) => a.started_at.getTime() - b.started_at.getTime(),
+  );
+
+  return allDeployments;
 };
 
 const scanUserInput = (link: string): [string, string] => {
@@ -331,7 +359,7 @@ const TaskController = {
   scanRepository,
   scanDefaultBranch,
   scanCommits,
-  scanDeployments,
+  scanWorkflows,
   scanReleases,
   scanDeploymentsFromGoogleDocs,
 };
