@@ -68,7 +68,7 @@ const scanCommits = async (
         repo_id: repository._id,
         branch_id: branch._id,
         sha: commit.sha,
-      });
+      }).then();
       // If not exist, create new
       if (!cmt) {
         const author = commit.commit.author?.name;
@@ -148,43 +148,43 @@ const scanWorkflows = async (
 
   const commitMap = new Map(commits.map((commit) => [commit.sha, commit]));
 
-  const deploymentPromises = filteredRuns
-    .map((run) => {
-      const commit = commitMap.get(run.head_sha);
-      if (!commit) return null;
+  const deploymentPromises = filteredRuns.map(async (run) => {
+    const commit = commitMap.get(run.head_sha);
+    if (!commit) return null;
 
-      return DeploymentModel.findOne({
+    try {
+      let deployment = await DeploymentModel.findOne({
         repo_id: repository._id,
         branch_id: branch._id,
         commit_id: commit._id,
         name: run.name,
-      })
-        .then((existingDeployment) => {
-          if (existingDeployment) return existingDeployment;
+      });
 
-          return DeploymentModel.create({
-            repo_id: repository._id,
-            branch_id: branch._id,
-            commit_id: commit._id,
-            name: run.name,
-            status: run.conclusion,
-            started_at: run.created_at,
-            finished_at: run.updated_at,
-          });
-        })
-        .catch((error) => {
-          console.error(
-            `[Worker]: Error processing deployment for run ${run.name}:`,
-            error,
-          );
-          return null;
+      if (!deployment) {
+        deployment = await DeploymentModel.create({
+          repo_id: repository._id,
+          branch_id: branch._id,
+          commit_id: commit._id,
+          name: run.name,
+          status: run.conclusion,
+          started_at: run.created_at,
+          finished_at: run.updated_at,
         });
-    })
-    .filter(Boolean) as Promise<Deployment>[];
+      }
+
+      return deployment;
+    } catch (error) {
+      console.error(
+        `[Worker]: Error processing deployment for run ${run.name}:`,
+        error,
+      );
+      return null;
+    }
+  });
 
   if (opts.return) {
     const deployments = (await Promise.all(deploymentPromises)).filter(
-      (deployment): deployment is Deployment => deployment !== null,
+      (deployment) => deployment !== null,
     );
     return deployments;
   }
@@ -230,8 +230,8 @@ const scanReleases = async (
   const commitStatusMap = new Map(commits.map((commit) => [commit.sha, false]));
   const tagsByName = new Map(tags.map((tag) => [tag.name, tag]));
 
-  const deploymentPromises = releases
-    .map((release) => {
+  const deploymentPromises = releases.map(async (release) => {
+    try {
       const matchingTag = tagsByName.get(release.tag_name);
       if (!matchingTag) return null;
 
@@ -240,7 +240,7 @@ const scanReleases = async (
 
       commitStatusMap.set(matchingCommit.sha, true);
 
-      return DeploymentModel.create({
+      const deployment = await DeploymentModel.create({
         repo_id: repository._id,
         commit_id: matchingCommit._id,
         name: release.name || matchingTag.name,
@@ -248,19 +248,21 @@ const scanReleases = async (
         branch_id: branch._id,
         started_at: matchingCommit.created_at,
         finished_at: release.published_at,
-      }).catch((error) => {
-        console.log(
-          `[Worker]: Error creating deployment for release ${release.name}:`,
-          error,
-        );
-        return null;
       });
-    })
-    .filter(Boolean) as Promise<Deployment>[];
+
+      return deployment;
+    } catch (error) {
+      console.log(
+        `[Worker]: Error creating deployment for release ${release.name}:`,
+        error,
+      );
+      return null;
+    }
+  });
 
   // Await all deployments
   const processedDeployments = (await Promise.all(deploymentPromises)).filter(
-    (deployment): deployment is Deployment => deployment !== null,
+    (deployment) => deployment !== null,
   );
 
   // Handle edge cases
@@ -272,6 +274,7 @@ const scanReleases = async (
 
   return opts.return ? finalDeployments : undefined;
 };
+
 const scanDeploymentsFromGoogleDocs = async (
   client: Octokit,
   repository: Repository,
