@@ -20,7 +20,7 @@ const processRepo = async (job: Job<WData>) => {
   console.log("Scanning for repository...");
   // Extract owner and repository name from link
   // e.g: https://github.com/mui/material-ui => owner: mui, repo: material-ui
-  const [owner, repo] = TaskController.extractUserInput(link);
+  const [owner, repo] = TaskController.scanUserInput(link);
 
   // Checks for repository on database, if doesn't exist, create a new repository document
   const repository: Repository = await TaskController.scanRepository(
@@ -29,13 +29,20 @@ const processRepo = async (job: Job<WData>) => {
     repo,
   );
 
-  const branch = await TaskController.createBranch(repository, "main");
+  console.log("Scanning for default branch...");
+  const branch = await TaskController.scanDefaultBranch(repository);
+
+  console.log(
+    `Scanning commits from ${branch.name} - ${repository.owner}/${repository.name}...`,
+  );
+  const commits = await TaskController.scanCommits(octokit, repository, branch);
 
   await job.updateProgress(50);
 
+  console.log(`Scanning deployments from repository ${repository.name}`);
   await Promise.all([
-    TaskController.scanDeployments(octokit, repository, branch),
-    //() => {}, //TaskController.scanReleases(octokit, repository, uat)
+    TaskController.scanDeployments(octokit, repository, branch, commits),
+    TaskController.scanReleases(octokit, repository, branch, commits),
     //TaskController.scanDeploymentsFromGoogleDocs(octokit, repository, prod),
   ]);
 

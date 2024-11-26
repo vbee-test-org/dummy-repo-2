@@ -11,6 +11,11 @@ const repositorySchema = new Schema({
   },
   private: {
     type: Boolean,
+    required: true,
+  },
+  default_branch: {
+    type: String,
+    required: true,
   },
 });
 
