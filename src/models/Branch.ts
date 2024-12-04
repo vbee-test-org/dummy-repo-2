@@ -1,5 +1,6 @@
 import mongoose, { InferSchemaType, model, Schema } from "mongoose";
 
+// The worst code i've ever seen
 const branchSchema = new Schema({
   repo_id: {
     type: mongoose.Schema.Types.ObjectId,
