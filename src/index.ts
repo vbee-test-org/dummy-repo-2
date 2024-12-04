@@ -9,6 +9,9 @@ import { Server } from "http";
 let server: Server;
 let worker: Worker;
 
+/**
+ * This is for dummy commit
+ **/
 async function bootstrap() {
   try {
     console.log("\n=== Starting DORA Tracker Services ===\n");
