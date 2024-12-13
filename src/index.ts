@@ -11,6 +11,7 @@ let worker: Worker;
 
 /**
  * This is for dummy commit
+ * Update this comment
  **/
 async function bootstrap() {
   try {
